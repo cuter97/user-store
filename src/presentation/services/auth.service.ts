@@ -21,7 +21,11 @@ export class AuthService {
 
             const { password, ...rest } = UserEntity.fromObject(user);
 
-            return { user: rest, token: 'ABC' };
+            const token = await JwtAdapter.generateToken({ id: user.id });
+
+            if (!token) throw CustomError.internalServer('Error jwt');
+
+            return { user: rest, token };
 
         } catch (error) {
             throw CustomError.internalServer(`${error}`);
@@ -44,6 +48,6 @@ export class AuthService {
 
         if (!token) throw CustomError.internalServer('Error jwt');
 
-        return { user: rest, token: token }
+        return { user: rest, token }
     }
 }

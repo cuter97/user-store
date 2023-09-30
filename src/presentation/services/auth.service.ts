@@ -1,4 +1,4 @@
-import { bcryptAdapter } from "../../config";
+import { JwtAdapter, bcryptAdapter } from "../../config";
 import { UserModel } from "../../data";
 import { CustomError, LoginUserDto, RegisterUserDto, UserEntity } from "../../domain";
 
@@ -35,11 +35,15 @@ export class AuthService {
         if (!user) throw CustomError.badRequest('Email not found');
 
         const isMatch = bcryptAdapter.compare(loginUserDto.password, user.password!);
+
         if (!isMatch) throw CustomError.badRequest('Password is not valid');
 
         const { password, ...rest } = UserEntity.fromObject(user);
 
-        return { user: rest, token: 'ABC' }
+        const token = await JwtAdapter.generateToken({ id: user.id });
 
+        if (!token) throw CustomError.internalServer('Error jwt');
+
+        return { user: rest, token: token }
     }
 }

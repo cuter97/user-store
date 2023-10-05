@@ -1,5 +1,5 @@
 import { CategoryModel } from "../../data";
-import { CreateCategoryDto, CustomError, UserEntity } from "../../domain";
+import { CreateCategoryDto, CustomError, PaginationDto, UserEntity } from "../../domain";
 
 export class CategoryService {
     async createCategory(createCategoryDto: CreateCategoryDto, user: UserEntity) {
@@ -9,7 +9,7 @@ export class CategoryService {
         if (categoryExist) throw CustomError.badRequest('Category already exist');
 
         try {
-            
+
             const category = new CategoryModel({
                 ...createCategoryDto,
                 user: user.id,
@@ -28,4 +28,34 @@ export class CategoryService {
         }
 
     }
+
+    async getCategories(paginationDto: PaginationDto) {
+
+        const { page, limit } = paginationDto;
+
+        try {
+            const [total, categories] = await Promise.all([
+                CategoryModel.countDocuments(),
+                CategoryModel.find()
+                    .skip((page - 1) * limit)
+                    .limit(limit)
+            ]);
+
+            return {
+                page,
+                limit,
+                total,
+                categories: categories.map(cat => ({
+                    id: cat.id,
+                    name: cat.name,
+                    available: cat.available,
+                }))
+            }
+
+        } catch (error) {
+            throw CustomError.internalServer('Internal server error');
+        }
+
+    }
+
 }
